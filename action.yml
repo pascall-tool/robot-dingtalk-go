@@ -1,0 +1,31 @@
+name: 'DingTalk Notification'
+description: 'Send messages to DingTalk via Golang CLI'
+
+inputs:
+  webhook:
+    description: '钉钉 Webhook 地址'
+    required: true
+  secret:
+    description: '加签密钥（可选）'
+    required: false
+  message:
+    description: '消息内容'
+    required: true
+  at_mobiles:
+    description: '@手机号（逗号分隔）'
+    required: false
+  markdown:
+    description: '是否使用 Markdown 消息'
+    required: false
+    default: "false"
+
+runs:
+  using: docker
+  image: 'docker://ghcr.io/mingcai-toolkit/dingtalk-action:latest'
+  args:
+    - send
+    - "--webhook=${{ inputs.webhook }}"
+    - "--secret=${{ inputs.secret }}"
+    - "--msg=${{ inputs.message }}"
+    - "--at=${{ inputs.at_mobiles }}"
+    - "--md=${{ inputs.markdown }}"
