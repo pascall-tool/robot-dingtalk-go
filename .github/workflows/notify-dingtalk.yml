@@ -1,27 +1,18 @@
-name: Notify DingTalk on Push
+name: Test DingTalk Notification
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Send DingTalk Notification
+      - name: 发送钉钉通知
         uses: mingcai-toolkit/dingtalk-action@v1.0.1
         with:
           webhook: ${{ secrets.DINGTALK_WEBHOOK }}
           secret:  ${{ secrets.DINGTALK_SECRET }}
-          message: |
-            🚀 代码已 push 到 main 分支
-            - 仓库: ${{ github.repository }}
-            - 作者: ${{ github.actor }}
-            - 提交: ${{ github.sha }}
-            - 时间: ${{ github.event.head_commit.timestamp }}
-          at_mobiles: ""
-          markdown: "true"
-          title: "Push 通知"
+          message: "其他项目构建成功 🎉"
+          at_mobiles: "13800000000"
+          markdown: "false"
+          title: "通知"
