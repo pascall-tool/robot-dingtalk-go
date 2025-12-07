@@ -20,12 +20,14 @@ go build -o dingtalk-action .
 # 发送钉钉消息（text）
 ./dingtalk-action send \
   --webhook <你的Webhook> \
+  --secret <你的Webhook加签> \
   --msg "构建成功" \
   --at "13800000000,13900000000"
 
 # 发送 Markdown 消息
 ./dingtalk-action send \
   --webhook <你的Webhook> \
+  --secret <你的Webhook加签> \
   --md \
   --title "通知" \
   --msg "### 🚀 构建成功\n- 项目：xxx\n- 时间：$(date)"
@@ -39,7 +41,7 @@ go build -o dingtalk-action .
 # docker build -t dingtalk-action .
 
 # 运行
-# docker run --rm dingtalk-action send --webhook <你的Webhook> --msg "Hello"
+# docker run --rm dingtalk-action send --webhook <你的Webhook>   --secret <你的Webhook加签>  --msg "Hello"
 ```
 
 ### 3. GitHub/Gitea Actions 集成
