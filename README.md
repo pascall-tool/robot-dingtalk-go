@@ -50,7 +50,7 @@ go build -o dingtalk-action .
 
 ```yaml
 - name: Send DingTalk Notification
-  uses: yourname/dingtalk-action@v1
+  uses: mingcai-toolkit/dingtalk-action@v1
   with:
     webhook: ${{ secrets.DINGTALK_WEBHOOK }}
     secret:  ${{ secrets.DINGTALK_SECRET }}
