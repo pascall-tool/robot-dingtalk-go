@@ -16,7 +16,6 @@ var (
 	markdown  bool
 	title     string
 )
-
 var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "发送钉钉消息",
@@ -28,14 +27,22 @@ var sendCmd = &cobra.Command{
 			mobiles = strings.Split(atMobiles, ",")
 		}
 
+		var err error
 		if markdown {
 			if title == "" {
 				title = "Notification"
 			}
-			return client.SendMarkdown(title, message, mobiles)
+			err = client.SendMarkdown(title, message, mobiles)
+		} else {
+			err = client.SendText(message, mobiles)
 		}
 
-		return client.SendText(message, mobiles)
+		if err == nil {
+			// 成功日志
+			println("发送钉钉消息成功！")
+			println("dingtalk-action version:", Version)
+		}
+		return err
 	},
 }
 
