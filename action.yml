@@ -17,7 +17,7 @@ inputs:
     required: false
     default: ""
   markdown:
-    description: '是否使用 Markdown 消息（true/false）'
+    description: '是否使用 Markdown'
     required: false
     default: "false"
   title:
