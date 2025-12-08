@@ -1,39 +1,62 @@
-name: Release CLI Binary
+name: Release dingtalk-action
 
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*"
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
-  release:
+  build:
+    name: Build and Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
+      # -------- 🟦 Build Go Binary -------- #
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: "1.25.2"
 
-      - name: Build binaries
+      - name: Build Go CLI
         run: |
-          GOOS=linux   GOARCH=amd64 go build -o dingtalk-action-linux-amd64   .
-          GOOS=darwin  GOARCH=amd64 go build -o dingtalk-action-darwin-amd64  .
-          GOOS=darwin  GOARCH=arm64 go build -o dingtalk-action-darwin-arm64  .
-          GOOS=windows GOARCH=amd64 go build -o dingtalk-action-windows-amd64.exe .
+          mkdir -p dist
+          GOOS=linux GOARCH=amd64 go build -o dist/dingtalk-action-linux-amd64 .
+          GOOS=windows GOARCH=amd64 go build -o dist/dingtalk-action-windows-amd64.exe .
+          GOOS=darwin GOARCH=arm64 go build -o dist/dingtalk-action-darwin-arm64 .
 
+      # -------- 🟦 Login to GHCR -------- #
+      - name: Login to GHCR
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # -------- 🟦 Build Docker Image -------- #
+      - name: Build Docker Image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}/dingtalk-action
+          TAG=${GITHUB_REF_NAME}
+          docker build -t $IMAGE:$TAG .
+          docker push $IMAGE:$TAG
+
+      # 可选：自动更新稳定 tag，例如 v1
+      - name: Update Major Tag (v1)
+        if: startsWith(github.ref_name, 'v1.')
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}/dingtalk-action
+          docker tag $IMAGE:${GITHUB_REF_NAME} $IMAGE:v1
+          docker push $IMAGE:v1
+
+      # -------- 🟦 Create GitHub Release -------- #
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dingtalk-action-linux-amd64
-            dingtalk-action-darwin-amd64
-            dingtalk-action-darwin-arm64
-            dingtalk-action-windows-amd64.exe
+          files: dist/*
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

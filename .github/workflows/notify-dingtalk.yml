@@ -13,6 +13,4 @@ jobs:
           webhook: ${{ secrets.DINGTALK_WEBHOOK }}
           secret:  ${{ secrets.DINGTALK_SECRET }}
           message: "其他项目构建成功 🎉"
-          at_mobiles: "13800000000"
-          markdown: "false"
-          title: "通知"
+
