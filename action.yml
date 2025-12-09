@@ -27,7 +27,7 @@ inputs:
 
 runs:
   using: docker
-  image: 'docker://ghcr.io/mingcai-toolkit/dingtalk-action:v1.0.1'
+  image: 'docker://mingcaitoolkit/dingtalk-action:v1.0.1'
   env:
     WEBHOOK: ${{ inputs.webhook }}
     SECRET: ${{ inputs.secret }}
