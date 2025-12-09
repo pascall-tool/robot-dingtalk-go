@@ -27,12 +27,22 @@ inputs:
 
 runs:
   using: docker
-  image: ghcr.io/mingcai-toolkit/dingtalk-action@v1.0.1
+  image: 'docker://ghcr.io/mingcai-toolkit/dingtalk-action:v1.0.1'
+  env:
+    WEBHOOK: ${{ inputs.webhook }}
+    SECRET: ${{ inputs.secret }}
+    MESSAGE: ${{ inputs.message }}
+    AT_MOBILES: ${{ inputs.at_mobiles }}
+    MARKDOWN: ${{ inputs.markdown }}
+    TITLE: ${{ inputs.title }}
+  entrypoint: /bin/sh
   args:
-    - send
-    - "--webhook=${{ inputs.webhook }}"
-    - "--secret=${{ inputs.secret }}"
-    - "--msg=${{ inputs.message }}"
-    - "--at=${{ inputs.at_mobiles }}"
-    - "--md=${{ inputs.markdown }}"
-    - "--title=${{ inputs.title }}"
+    - -c
+    - |
+      dingtalk-action send \
+        --webhook "$WEBHOOK" \
+        --secret "$SECRET" \
+        --msg "$MESSAGE" \
+        --at "$AT_MOBILES" \
+        --md "$MARKDOWN" \
+        --title "$TITLE"
