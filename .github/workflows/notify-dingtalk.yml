@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 发送钉钉通知
-        uses: mingcai-toolkit/dingtalk-action@v1.0.1
+        uses: mingcai-toolkit/dingtalk-action@v1
         with:
           webhook: ${{ secrets.DINGTALK_WEBHOOK }}
           secret:  ${{ secrets.DINGTALK_SECRET }}
