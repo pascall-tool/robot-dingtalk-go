@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -20,14 +21,24 @@ const (
 )
 
 type DingTalkClient struct {
-	Webhook string
-	Secret  string
+	Webhook    string
+	Secret     string
+	HTTPClient *http.Client
 }
 
 func New(webhook, secret string) *DingTalkClient {
 	return &DingTalkClient{
 		Webhook: webhook,
 		Secret:  secret,
+		HTTPClient: &http.Client{
+			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				MaxIdleConns:        100,
+				MaxIdleConnsPerHost: 10,
+				IdleConnTimeout:     90 * time.Second,
+				DisableKeepAlives:   false,
+			},
+		},
 	}
 }
 
@@ -90,11 +101,60 @@ func (c *DingTalkClient) send(payload any) error {
 		URL += fmt.Sprintf("&timestamp=%s&sign=%s", timestamp, sign)
 	}
 
-	resp, err := http.Post(URL, "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+	// 重试机制:最多重试3次
+	var lastErr error
+	for i := 0; i < 3; i++ {
+		if i > 0 {
+			// 等待一段时间后重试,使用指数退避
+			time.Sleep(time.Duration(i*500) * time.Millisecond)
+		}
 
-	return nil
+		req, err := http.NewRequest("POST", URL, bytes.NewBuffer(body))
+		if err != nil {
+			lastErr = fmt.Errorf("创建请求失败: %w", err)
+			continue
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Close = true // 禁用连接复用,避免陈旧连接
+
+		resp, err := c.HTTPClient.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("发送请求失败(第%d次): %w", i+1, err)
+			continue
+		}
+
+		// 读取响应体
+		respBody, readErr := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		if readErr != nil {
+			lastErr = fmt.Errorf("读取响应失败(第%d次): %w", i+1, readErr)
+			continue
+		}
+
+		// 打印响应信息
+		fmt.Printf("钉钉API响应 [状态码: %d]:\n%s\n", resp.StatusCode, string(respBody))
+
+		// 检查HTTP状态码
+		if resp.StatusCode != http.StatusOK {
+			lastErr = fmt.Errorf("钉钉API返回错误状态码(第%d次): %d, 响应: %s", i+1, resp.StatusCode, string(respBody))
+			continue
+		}
+
+		// 解析响应JSON,检查钉钉API返回的errcode
+		var result map[string]interface{}
+		if err := json.Unmarshal(respBody, &result); err == nil {
+			if errcode, ok := result["errcode"].(float64); ok && errcode != 0 {
+				errmsg := result["errmsg"]
+				lastErr = fmt.Errorf("钉钉API返回错误(第%d次): errcode=%v, errmsg=%v", i+1, errcode, errmsg)
+				continue
+			}
+		}
+
+		// 成功
+		return nil
+	}
+
+	return lastErr
 }
