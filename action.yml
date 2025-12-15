@@ -27,7 +27,7 @@ inputs:
 
 runs:
   using: docker
-  image: 'docker://ghcr.io/pascall-tool/robot-dingtalk-go:v1'
+  image: 'docker://ghcr.io/pascall-tool/robot-dingtalk-go/robot-dingtalk-go:v1'
   env:
     WEBHOOK: ${{ inputs.webhook }}
     SECRET: ${{ inputs.secret }}
