@@ -93,34 +93,39 @@ func (c *DingTalkClient) SendMarkdown(title, text string, atMobiles []string) er
 func (c *DingTalkClient) send(payload any) error {
 	body, _ := json.Marshal(payload)
 
-	URL := c.Webhook
-
-	// 带签名
-	if c.Secret != "" {
-		timestamp, sign, _ := c.Sign()
-		URL += fmt.Sprintf("&timestamp=%s&sign=%s", timestamp, sign)
-	}
-
 	// 重试机制:最多重试3次
 	var lastErr error
 	for i := 0; i < 3; i++ {
 		if i > 0 {
 			// 等待一段时间后重试,使用指数退避
+			fmt.Printf("第%d次重试,等待%dms...\n", i+1, i*500)
 			time.Sleep(time.Duration(i*500) * time.Millisecond)
+		}
+
+		// 每次重试都重新生成签名和URL(避免时间戳过期)
+		URL := c.Webhook
+		if c.Secret != "" {
+			timestamp, sign, _ := c.Sign()
+			URL += fmt.Sprintf("&timestamp=%s&sign=%s", timestamp, sign)
+			fmt.Printf("请求URL(第%d次): %s\n", i+1, URL)
 		}
 
 		req, err := http.NewRequest("POST", URL, bytes.NewBuffer(body))
 		if err != nil {
 			lastErr = fmt.Errorf("创建请求失败: %w", err)
+			fmt.Printf("创建请求失败(第%d次): %v\n", i+1, err)
 			continue
 		}
 
 		req.Header.Set("Content-Type", "application/json")
 		req.Close = true // 禁用连接复用,避免陈旧连接
 
+		fmt.Printf("开始发送请求(第%d次)...\n", i+1)
 		resp, err := c.HTTPClient.Do(req)
 		if err != nil {
 			lastErr = fmt.Errorf("发送请求失败(第%d次): %w", i+1, err)
+			fmt.Printf("发送请求失败(第%d次): %v\n", i+1, err)
+			// EOF错误通常是临时性网络问题,继续重试
 			continue
 		}
 
